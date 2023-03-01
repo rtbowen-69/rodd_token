@@ -16,6 +16,11 @@ task("accounts", "Prints an accounts", async (taskArgs, hre) => {
 // Go to hppts://hardhat.org/config to learn more
 
 /** @type import('hardhat/config').HardhatUserConfig */
+
 module.exports = {
-  solidity: "0.8.17",
+  solidity: "0.8.9",
+  nertworks: {
+    localhost: {}
+    // Sees default
+  },
 };
