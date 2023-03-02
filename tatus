@@ -1,0 +1,125 @@
+[1mdiff --git a/contracts/Token.sol b/contracts/Token.sol[m
+[1mindex 757e5f7..6317bc1 100644[m
+[1m--- a/contracts/Token.sol[m
+[1m+++ b/contracts/Token.sol[m
+[36m@@ -41,17 +41,29 @@[m [mcontract Token {[m
+ 		returns (bool success) [m
+ 	{[m
+ 		require(balanceOf[msg.sender] >= _value);[m
+[32m+[m[41m[m
+[32m+[m		[32m_transfer(msg.sender, _to, _value);[m[41m[m
+[32m+[m[41m[m
+[32m+[m		[32mreturn true;[m[41m[m
+[32m+[m	[32m}[m[41m[m
+[32m+[m[41m[m
+[32m+[m	[32mfunction _transfer([m[41m[m
+[32m+[m		[32maddress _from,[m[41m[m
+[32m+[m		[32maddress _to,[m[41m[m
+[32m+[m		[32muint256 _value[m[41m[m
+[32m+[m	[32m) internal {[m[41m[m
+ 		require(_to != address(0));[m
+ [m
+[31m-		balanceOf[msg.sender] = balanceOf[msg.sender] - _value;[m
+[32m+[m		[32mbalanceOf[_from] = balanceOf[_from] - _value;[m[41m[m
+ 		balanceOf[_to] = balanceOf[_to] + _value;[m
+ [m
+[31m-		emit Transfer(msg.sender, _to, _value);[m
+[31m-[m
+[31m-		return true;[m
+[32m+[m		[32memit Transfer(_from, _to, _value);[m[41m[m
+ 	}[m
+ [m
+[31m-	function approve(address _spender, uint256 _value) [m
+[32m+[m	[32mfunction approve([m[41m[m
+[32m+[m		[32maddress _spender,[m[41m [m
+[32m+[m		[32muint256 _value[m[41m[m
+[32m+[m	[32m)[m[41m [m
+ 		public [m
+ 		returns(bool success)[m
+ 	{[m
+[36m@@ -64,4 +76,21 @@[m [mcontract Token {[m
+ [m
+ 	}[m
+ [m
+[32m+[m	[32mfunction transferFrom([m[41m[m
+[32m+[m		[32maddress _from,[m[41m [m
+[32m+[m		[32maddress _to,[m[41m [m
+[32m+[m		[32muint256 _value[m[41m[m
+[32m+[m	[32m)[m[41m[m
+[32m+[m		[32mpublic[m[41m[m
+[32m+[m		[32mreturns(bool success)[m[41m [m
+[32m+[m	[32m{[m[41m[m
+[32m+[m		[32mrequire(_value <= balanceOf[_from]);[m[41m[m
+[32m+[m		[32mrequire(_value <= allowance[_from][msg.sender]);[m[41m[m
+[32m+[m[41m[m
+[32m+[m		[32mallowance[_from][msg.sender] = allowance[_from][msg.sender] - _value;[m[41m[m
+[32m+[m[41m[m
+[32m+[m		[32m_transfer(_from, _to, _value);[m[41m[m
+[32m+[m[41m[m
+[32m+[m		[32mreturn true;[m[41m[m
+[32m+[m	[32m}[m[41m[m
+ }[m
+[1mdiff --git a/test/Token.js b/test/Token.js[m
+[1mindex 2c14412..d41f41c 100644[m
+[1m--- a/test/Token.js[m
+[1m+++ b/test/Token.js[m
+[36m@@ -101,6 +101,9 @@[m [mdescribe('Token', () => {[m
+   })[m
+ [m
+   describe('Approving Tokens', () => {[m
+[32m+[m[32m    let amount,[m
+[32m+[m[32m      transaction,[m
+[32m+[m[32m      result[m
+ [m
+     beforeEach(async () => {[m
+       amount = tokens(100)[m
+[36m@@ -133,4 +136,49 @@[m [mdescribe('Token', () => {[m
+ [m
+   })[m
+ [m
+[32m+[m[32m  describe('Delegated Token Transfers', () => {[m
+[32m+[m[32m    let amount,[m
+[32m+[m[32m      transaction,[m
+[32m+[m[32m      result[m
+[32m+[m
+[32m+[m[32m    beforeEach(async () => {[m
+[32m+[m[32m      amount = tokens(100)[m
+[32m+[m[32m      transaction = await token.connect(deployer).approve(exchange.address, amount)[m
+[32m+[m[32m      result = await transaction.wait()[m
+[32m+[m[32m    })[m
+[32m+[m
+[32m+[m[32m    describe('Success', () => {[m
+[32m+[m[32m      beforeEach(async () => {[m
+[32m+[m[32m        transaction = await token.connect(exchange).transferFrom(deployer.address, receiver.address, amount)[m
+[32m+[m[32m        result = await transaction.wait()[m
+[32m+[m[32m      })[m
+[32m+[m
+[32m+[m[32m      it('transfers token balances', async () => {[m
+[32m+[m[32m        expect(await token.balanceOf(deployer.address)).to.be.equal(ethers.utils.parseUnits('9999900', 'ether'))[m
+[32m+[m[32m        expect(await token.balanceOf(receiver.address)).to.be.equal(amount)[m[41m      [m
+[32m+[m[32m      })[m
+[32m+[m
+[32m+[m[32m      it('resets allowance', async () => {[m
+[32m+[m[32m        expect(await token.allowance(deployer.address, exchange.address)).to.be.equal(0)[m
+[32m+[m[32m      })[m
+[32m+[m
+[32m+[m[32m      it('emits a transfer event', async () => {[m
+[32m+[m[32m        const event = result.events[0][m
+[32m+[m[32m        expect(event.event).to.equal('Transfer')[m
+[32m+[m
+[32m+[m[32m        const args = event.args[m
+[32m+[m[32m        expect(args.from).to.equal(deployer.address)[m
+[32m+[m[32m        expect(args.to).to.equal(receiver.address)[m
+[32m+[m[32m        expect(args.value).to.equal(amount)[m
+[32m+[m[32m      })[m
+[32m+[m[32m    })[m
+[32m+[m
+[32m+[m[32m    describe('Failure', async () => {[m
+[32m+[m[32m      const invalidAmount = tokens(100000000)[m
+[32m+[m[32m      await expect(token.connect(exchange).transferFrom(deployer.address, receiver.address, invalidAmount)).to.be.reverted[m
+[32m+[m
+[32m+[m[32m    })[m
+[32m+[m
+[32m+[m[32m  })[m
+[32m+[m
+ })[m
