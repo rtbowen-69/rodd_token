@@ -4,7 +4,7 @@ async function main() {
 
 
   // Deploy Contract
-  const token = await Token.deploy()
+  const token = await Token.deploy('Rodd Token', 'RODD', '10000000')
   await token.deployed()
   console.log(`Token Deployed to: ${token.address}`)  
 }
